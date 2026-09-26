@@ -1,0 +1,22 @@
+<%- include('partials/head') %>
+<div class="premium-hero">
+  <h1>★ Go Premium</h1>
+  <p>Unlock <strong><%= premiumCount %></strong> premium videos<% if (settings.hide_ads_for_subscribers === '1') { %>, with <strong>no ads</strong><% } %>. Cancel any time.</p>
+</div>
+<div class="plans">
+  <% plans.forEach(function (p, i) { %>
+    <div class="plan <%= i === 1 ? 'plan-best' : '' %>">
+      <% if (i === 1) { %><div class="plan-flag">Best value</div><% } %>
+      <h2><%= p.name %></h2>
+      <div class="price"><%= fmtMoney(p.price_cents) %></div>
+      <div class="muted"><%= p.days %> days · <%= fmtMoney(p.price_cents / p.days * 30) %>/month</div>
+      <form method="post" action="/premium/<%= p.id %>">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-premium btn-lg"><%= user ? 'Choose ' + p.name : 'Sign up & choose' %></button>
+      </form>
+    </div>
+  <% }) %>
+</div>
+<% if (paymentMode === 'demo') { %><p class="center muted small">Demo mode: premium is activated instantly without charging. Connect a payment processor before launch.</p><% } %>
+<% if (isSubscriber && user) { %><p class="center">You're premium until <strong><%= user.role === 'admin' ? 'forever (admin)' : user.subscription_expires_at.slice(0, 10) %></strong>.</p><% } %>
+<%- include('partials/foot') %>

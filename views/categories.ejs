@@ -1,0 +1,11 @@
+<%- include('partials/head') %>
+<h1 class="section-title">Categories</h1>
+<div class="grid grid-cats">
+  <% categories.forEach(function (c) { %>
+    <a class="cat-card" href="/category/<%= c.slug %>">
+      <div class="thumb"><% if (c.cover_id) { %><img src="/media/thumb/<%= c.cover_id %>" alt="" loading="lazy"><% } %></div>
+      <div class="cat-name"><%= c.name %> <span class="muted"><%= c.n %></span></div>
+    </a>
+  <% }) %>
+</div>
+<%- include('partials/foot') %>

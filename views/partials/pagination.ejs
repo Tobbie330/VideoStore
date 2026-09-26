@@ -1,0 +1,13 @@
+<% if (pages > 1) {
+  function link(p) { var q = Object.assign({}, query, { page: p }); return '?' + new URLSearchParams(q).toString(); }
+  var start = Math.max(1, page - 3), end = Math.min(pages, page + 3); %>
+  <nav class="pagination">
+    <% if (page > 1) { %><a href="<%= link(page - 1) %>">‹ Prev</a><% } %>
+    <% if (start > 1) { %><a href="<%= link(1) %>">1</a><% if (start > 2) { %><span>…</span><% } %><% } %>
+    <% for (var p = start; p <= end; p++) { %>
+      <% if (p === page) { %><span class="current"><%= p %></span><% } else { %><a href="<%= link(p) %>"><%= p %></a><% } %>
+    <% } %>
+    <% if (end < pages) { %><% if (end < pages - 1) { %><span>…</span><% } %><a href="<%= link(pages) %>"><%= pages %></a><% } %>
+    <% if (page < pages) { %><a href="<%= link(page + 1) %>">Next ›</a><% } %>
+  </nav>
+<% } %>

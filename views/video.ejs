@@ -1,0 +1,52 @@
+<%- include('partials/head') %>
+<div class="watch">
+  <div class="watch-main">
+    <div class="player">
+      <% if (locked) { %>
+        <div class="locked" style="<%= video.thumb_file ? 'background-image:url(/media/thumb/' + video.id + ')' : '' %>">
+          <div class="locked-inner">
+            <div class="lock-icon">🔒</div>
+            <h2>This is a Premium video</h2>
+            <p>Subscribe to watch this and every other premium video — ad-free.</p>
+            <a class="btn btn-premium btn-lg" href="/premium">★ Go Premium</a>
+            <% if (!user) { %><p class="muted">Already a member? <a href="/login">Log in</a></p><% } %>
+          </div>
+        </div>
+      <% } else { %>
+        <video controls playsinline preload="metadata" poster="/media/thumb/<%= video.id %>" controlslist="nodownload">
+          <source src="/media/video/<%= video.id %>" type="video/mp4">
+        </video>
+      <% } %>
+    </div>
+    <% if (video.status !== 'approved') { %><div class="flash flash-info">Only you can see this — status: <%= video.status %></div><% } %>
+    <h1 class="video-title"><%= video.title %> <% if (video.access === 'premium') { %><span class="badge badge-premium">★ Premium</span><% } %></h1>
+    <div class="video-bar">
+      <div class="muted">
+        <%= fmtViews(video.views) %> views · <a href="/creator/<%= video.uploader %>"><%= video.uploader %></a>
+        <% if (video.category_name) { %> · <a href="/category/<%= video.category_slug %>"><%= video.category_name %></a><% } %>
+        · <%= (video.published_at || video.created_at).slice(0, 10) %>
+      </div>
+      <div class="vote" data-video="<%= video.id %>">
+        <form method="post" action="/video/<%= video.id %>/vote">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="btn vote-btn <%= myVote === 1 ? 'active' : '' %>" name="value" value="<%= myVote === 1 ? 0 : 1 %>" data-v="1">👍 <span class="likes"><%= video.likes %></span></button>
+          <button class="btn vote-btn <%= myVote === -1 ? 'active' : '' %>" name="value" value="<%= myVote === -1 ? 0 : -1 %>" data-v="-1">👎 <span class="dislikes"><%= video.vote_count - video.likes %></span></button>
+        </form>
+        <a class="btn btn-ghost" href="/video/<%= video.id %>/report">⚑ Report</a>
+      </div>
+    </div>
+    <% if (tags.length) { %>
+      <div class="tag-strip"><% tags.forEach(function (t) { %><a class="tag" href="/tag/<%= t.slug %>">#<%= t.name %></a><% }) %></div>
+    <% } %>
+    <% if (video.description) { %><div class="description"><%= video.description %></div><% } %>
+    <% if (showAds) { %><%- include('partials/ad', { slot: 'below_player' }) %><% } %>
+  </div>
+  <aside class="watch-side">
+    <% if (showAds) { %><%- include('partials/ad', { slot: 'sidebar' }) %><% } %>
+    <h3 class="side-title">Related videos</h3>
+    <div class="related">
+      <% related.forEach(function (v) { %><%- include('partials/card', { v: v }) %><% }) %>
+    </div>
+  </aside>
+</div>
+<%- include('partials/foot') %>

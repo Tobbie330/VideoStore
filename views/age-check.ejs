@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="RATING" content="RTA-5042-1996-1400-1577-RTA">
+  <meta name="robots" content="noindex">
+  <title>Adults only · <%= settings.site_name %></title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="age-body">
+  <div class="age-box">
+    <div class="logo"><%= settings.site_name %></div>
+    <h1>This is an adult website</h1>
+    <p>This website contains age-restricted materials including nudity and explicit depictions of sexual activity.
+      By entering, you affirm that you are at least 18 years of age (or the age of majority in your jurisdiction)
+      and you consent to viewing sexually explicit content.</p>
+    <form method="post" action="/age-check">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-primary btn-lg" name="confirm" value="yes">I am 18 or older — Enter</button>
+      <button class="btn btn-ghost btn-lg" name="confirm" value="no">I am under 18 — Exit</button>
+    </form>
+    <p class="muted small">Parents: this site is labeled with RTA. Protect minors with parental control tools. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<div class="grid">
+  <% videos.forEach(function (v, i) { %>
+    <%- include('card', { v: v }) %>
+    <% if (showAds && i === 7) { %><div class="card card-ad"><%- include('ad', { slot: 'in_feed' }) %></div><% } %>
+  <% }) %>
+</div>
+<% if (!videos.length) { %><p class="empty">No videos here yet.</p><% } %>

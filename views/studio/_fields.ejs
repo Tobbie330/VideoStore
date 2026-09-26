@@ -1,0 +1,24 @@
+<label>Title <input name="title" required minlength="3" maxlength="150" value="<%= v.title || '' %>"></label>
+<label>Description <textarea name="description" rows="4" maxlength="5000"><%= v.description || '' %></textarea></label>
+<div class="row">
+  <label>Category
+    <select name="category_id">
+      <option value="">— Choose —</option>
+      <% categories.forEach(function (c) { %><option value="<%= c.id %>" <%= v.category_id === c.id ? 'selected' : '' %>><%= c.name %></option><% }) %>
+    </select>
+  </label>
+  <fieldset class="access-pick">
+    <legend>Who can watch?</legend>
+    <label class="radio-card"><input type="radio" name="access" value="free" <%= v.access !== 'premium' ? 'checked' : '' %>><span><strong>Free</strong><br><small>Everyone, with ads</small></span></label>
+    <label class="radio-card"><input type="radio" name="access" value="premium" <%= v.access === 'premium' ? 'checked' : '' %>><span><strong>★ Premium</strong><br><small>Subscribers only</small></span></label>
+  </fieldset>
+</div>
+<label>Tags <small class="muted">— type and press Enter or comma</small>
+  <div class="tag-input" data-tag-input>
+    <input type="hidden" name="tags" value="<%= tagsValue %>">
+    <input type="text" class="tag-entry" placeholder="e.g. outdoor, blonde, pov" autocomplete="off">
+  </div>
+</label>
+<% if (typeof popularTags !== 'undefined' && popularTags.length) { %>
+  <div class="tag-suggest muted small">Popular: <% popularTags.forEach(function (t) { %><button type="button" class="tag tag-sm" data-add-tag="<%= t.name %>">#<%= t.name %></button><% }) %></div>
+<% } %>

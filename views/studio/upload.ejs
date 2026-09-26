@@ -1,0 +1,22 @@
+<%- include('../partials/head') %>
+<div class="panel">
+  <h1>Upload a video</h1>
+  <p class="muted small">🛡 Every upload is virus-scanned and stripped of all hidden metadata (location, device, dates) before anyone can see it.</p>
+  <form id="upload-form" method="post" action="/studio/upload" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="dropzone" id="dropzone">
+      <input type="file" name="video" id="video-input" accept="video/*" required>
+      <div class="dz-text"><div class="dz-icon">⬆</div><strong>Drag & drop your video here</strong><br>or click to choose · max <%= maxMb %> MB</div>
+      <div class="dz-file" hidden></div>
+    </div>
+    <%- include('_fields', { v: {}, tagsValue: '' }) %>
+    <label>Custom thumbnail (optional) <input type="file" name="thumbnail" accept="image/*"><small class="muted">If you skip this, one is picked from the video automatically.</small></label>
+    <label class="check compliance"><input type="checkbox" name="compliance" value="yes" required>
+      I confirm every person in this video was 18 or older at the time of filming, gave consent to be filmed and to have
+      this video published, and that I own the rights to it and keep age/ID records as required by law (18 U.S.C. 2257).</label>
+    <div class="progress" hidden><div class="progress-bar"></div><span class="progress-text"></span></div>
+    <button class="btn btn-primary btn-lg" id="upload-btn">Upload</button>
+  </form>
+</div>
+<script src="/static/js/upload.js" defer></script>
+<%- include('../partials/foot') %>

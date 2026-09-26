@@ -1,0 +1,12 @@
+<% var ad = showAds ? pickAd(slot) : null; %>
+<% if (ad) { %>
+  <div class="ad ad-<%= slot %>" data-partner="<%= ad.partner %>">
+    <span class="ad-label">Ad · <%= ad.partner %></span>
+    <% if (ad.kind === 'html') { %>
+      <%# Partner HTML runs in a sandboxed iframe so it can't touch our pages or cookies. %>
+      <iframe class="ad-frame" sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" loading="lazy" srcdoc="<%= '<!doctype html><html><body style=\'margin:0\'>' + ad.html + '</body></html>' %>"></iframe>
+    <% } else if (ad.image_file) { %>
+      <a href="/ads/click/<%= ad.id %>" target="_blank" rel="sponsored noopener"><img src="/ads/img/<%= ad.image_file %>" alt="<%= ad.name %>" loading="lazy"></a>
+    <% } %>
+  </div>
+<% } %>

@@ -1,0 +1,24 @@
+<%- include('../partials/head') %>
+<div class="panel">
+  <h1>My account</h1>
+  <p><strong><%= user.username %></strong> · <%= user.email %> · <span class="badge"><%= user.role %></span></p>
+  <h2>Membership</h2>
+  <% if (isSubscriber) { %>
+    <p>★ Premium <%= user.role === 'admin' ? '(admin)' : 'until ' + user.subscription_expires_at.slice(0, 10) %></p>
+  <% } else { %>
+    <p>Free member. <a class="btn btn-premium" href="/premium">★ Go Premium</a></p>
+  <% } %>
+  <% if (payments.length) { %>
+    <table class="table"><tr><th>Date</th><th>Plan</th><th>Amount</th><th>Via</th></tr>
+      <% payments.forEach(function (p) { %><tr><td><%= p.created_at.slice(0, 10) %></td><td><%= p.plan_name %></td><td><%= fmtMoney(p.amount_cents) %></td><td><%= p.provider %></td></tr><% }) %>
+    </table>
+  <% } %>
+  <h2>Change password</h2>
+  <form method="post" action="/account/password" class="form narrow-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Current password <input type="password" name="current" required autocomplete="current-password"></label>
+    <label>New password <input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <button class="btn btn-primary">Update password</button>
+  </form>
+</div>
+<%- include('../partials/foot') %>

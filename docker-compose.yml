@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: "3310"
+    volumes:
+      - app-data:/data
+      - app-uploads:/uploads
+    # Uploads wait safely in quarantine while the scanner is starting up,
+    # so the app doesn't need to wait for it.
+    depends_on: [clamav]
+    networks: [frontend, scan]
+
+  # Virus scanner in its own container. It has no access to the uploads
+  # volume; the app streams files to it over the internal "scan" network.
+  # "updates" lets freshclam download new virus definitions.
+  # The first start downloads ~300 MB of signatures and takes a few minutes.
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+    volumes:
+      - ./docker/clamd.conf:/etc/clamav/clamd.conf:ro
+      - clamav-db:/var/lib/clamav
+    networks: [scan, updates]
+
+volumes:
+  app-data:
+  app-uploads:
+  clamav-db:
+
+networks:
+  frontend:
+  scan:
+    internal: true
+  updates:

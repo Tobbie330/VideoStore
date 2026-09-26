@@ -1,0 +1,28 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Categories</h1>
+<form method="post" action="/admin/categories" class="inline-form panel">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <input name="name" placeholder="New category name" required>
+  <input name="description" placeholder="Short description (optional)">
+  <input name="sort_order" type="number" placeholder="Order" style="width:6rem">
+  <button class="btn btn-primary">Add category</button>
+</form>
+<table class="table">
+  <tr><th>Name</th><th>Description</th><th>Order</th><th>Videos</th><th></th></tr>
+  <% categories.forEach(function (c) { %>
+  <% var f = 'cat-' + c.id; %>
+  <tr>
+    <td><input form="<%= f %>" name="name" value="<%= c.name %>" required></td>
+    <td><input form="<%= f %>" name="description" value="<%= c.description %>"></td>
+    <td><input form="<%= f %>" name="sort_order" type="number" value="<%= c.sort_order %>" style="width:5rem"></td>
+    <td><a href="/category/<%= c.slug %>"><%= c.n %></a></td>
+    <td class="actions"><form id="<%= f %>" method="post" action="/admin/categories/<%= c.id %>">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="btn btn-sm" name="action" value="save">Save</button>
+      <button class="btn btn-sm btn-danger" name="action" value="delete" onclick="return confirm('Delete category? Videos keep existing without a category.')">Delete</button>
+    </form></td>
+  </tr>
+  <% }) %>
+</table>
+<%- include('../partials/foot') %>

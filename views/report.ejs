@@ -1,0 +1,17 @@
+<%- include('partials/head') %>
+<div class="panel narrow">
+  <h1>Report video</h1>
+  <p class="muted">“<%= video.title %>”</p>
+  <form method="post" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Reason
+      <select name="reason" required><% reasons.forEach(function (r) { %><option><%= r %></option><% }) %></select>
+    </label>
+    <label>Details (optional)
+      <textarea name="details" rows="4" maxlength="2000"></textarea>
+    </label>
+    <button class="btn btn-primary">Send report</button>
+    <a class="btn btn-ghost" href="/video/<%= video.id %>/<%= video.slug %>">Cancel</a>
+  </form>
+</div>
+<%- include('partials/foot') %>

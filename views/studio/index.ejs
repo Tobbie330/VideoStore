@@ -1,0 +1,29 @@
+<%- include('../partials/head') %>
+<div class="section-head">
+  <h1 class="section-title">My Studio <small><%= videos.length %> videos</small></h1>
+  <a class="btn btn-primary" href="/studio/upload">⬆ Upload video</a>
+</div>
+<% if (!videos.length) { %>
+  <div class="panel center"><p>You haven't uploaded anything yet.</p><a class="btn btn-primary btn-lg" href="/studio/upload">Upload your first video</a></div>
+<% } else { %>
+<table class="table studio-table">
+  <tr><th></th><th>Title</th><th>Status</th><th>Access</th><th>Views</th><th></th></tr>
+  <% videos.forEach(function (v) { %>
+    <tr data-id="<%= v.id %>">
+      <td class="mini-thumb"><% if (v.thumb_file) { %><img src="/media/thumb/<%= v.id %>" alt=""><% } %></td>
+      <td><a href="/video/<%= v.id %>/<%= v.slug %>"><%= v.title %></a><div class="muted small"><%= v.category_name || 'No category' %> · <%= fmtDuration(v.duration_seconds) %></div></td>
+      <td><span class="status status-<%= v.status %>"><%= STATUS_LABELS[v.status] || v.status %></span><div class="muted small status-detail"><%= v.status_detail %></div></td>
+      <td><%= v.access === 'premium' ? '★ Premium' : 'Free' %></td>
+      <td><%= fmtViews(v.views) %></td>
+      <td class="actions">
+        <a class="btn btn-sm" href="/studio/video/<%= v.id %>/edit">Edit</a>
+        <form method="post" action="/studio/video/<%= v.id %>/delete" onsubmit="return confirm('Delete this video permanently?')">
+          <input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  <% }) %>
+</table>
+<% if (videos.some(function (v) { return v.status === 'processing'; })) { %><script>setTimeout(function () { location.reload(); }, 8000);</script><% } %>
+<% } %>
+<%- include('../partials/foot') %>

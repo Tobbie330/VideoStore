@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Dashboard</h1>
+<div class="flash <%= scannerOnline ? 'flash-success' : 'flash-error' %>">
+  Virus scanner (ClamAV): <strong><%= scannerOnline ? 'online' : 'OFFLINE — uploads will wait in quarantine until it is back' %></strong>
+</div>
+<div class="stats">
+  <a class="stat" href="/admin/videos?status=approved"><b><%= stats.live %></b>Live videos</a>
+  <a class="stat <%= stats.pending ? 'stat-alert' : '' %>" href="/admin/videos?status=pending"><b><%= stats.pending %></b>Awaiting review</a>
+  <a class="stat" href="/admin/videos?status=processing"><b><%= stats.processing %></b>Processing</a>
+  <a class="stat" href="/admin/videos?status=infected"><b><%= stats.blocked %></b>Blocked / failed</a>
+  <a class="stat <%= stats.reports ? 'stat-alert' : '' %>" href="/admin/reports"><b><%= stats.reports %></b>Open reports</a>
+  <a class="stat" href="/admin/users"><b><%= stats.users %></b>Users</a>
+  <a class="stat" href="/admin/users"><b><%= stats.subscribers %></b>Active subscribers</a>
+  <div class="stat"><b><%= fmtMoney(stats.revenue30) %></b>Revenue (30 days)</div>
+  <div class="stat"><b><%= fmtViews(stats.views) %></b>Total views</div>
+  <a class="stat" href="/admin/ads"><b><%= fmtViews(stats.adImpressions) %> / <%= fmtViews(stats.adClicks) %></b>Ad impressions / clicks</a>
+</div>
+<%- include('../partials/foot') %>

@@ -1,0 +1,48 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Videos</h1>
+<div class="sortbar">
+  <div class="tabs">
+    <% ['pending','approved','processing','rejected','infected','failed','all'].forEach(function (s) { %>
+      <a class="<%= status === s ? 'active' : '' %>" href="?status=<%= s %>"><%= s %></a>
+    <% }) %>
+  </div>
+  <form method="get"><input type="hidden" name="status" value="<%= status %>"><input type="search" name="q" value="<%= q %>" placeholder="Title or uploader"></form>
+</div>
+<table class="table">
+  <tr><th></th><th>Video</th><th>Uploader</th><th>Status</th><th>Access</th><th>Actions</th></tr>
+  <% videos.forEach(function (v) { %>
+  <tr>
+    <td class="mini-thumb"><% if (v.thumb_file) { %><img src="/media/thumb/<%= v.id %>" alt=""><% } %></td>
+    <td>
+      <% if (v.video_file) { %><a href="/video/<%= v.id %>/<%= v.slug %>" target="_blank"><%= v.title %></a><% } else { %><%= v.title %><% } %>
+      <div class="muted small"><%= v.category_name || '—' %> · <%= fmtDuration(v.duration_seconds) %> · <%= v.created_at %><% if (v.featured) { %> · ⭐ featured<% } %></div>
+      <% if (v.open_reports) { %><div class="status status-rejected"><%= v.open_reports %> open report(s)</div><% } %>
+    </td>
+    <td><%= v.username %></td>
+    <td><span class="status status-<%= v.status %>"><%= v.status %></span><div class="muted small"><%= v.status_detail %></div></td>
+    <td><%= v.access %></td>
+    <td class="actions">
+      <% if (v.video_file) { %>
+      <form method="post" action="/admin/videos/<%= v.id %>/status">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <% if (v.status !== 'approved') { %><button class="btn btn-sm btn-primary" name="action" value="approve">Approve</button><% } %>
+        <% if (v.status !== 'rejected') { %><button class="btn btn-sm btn-danger" name="action" value="reject">Reject</button><% } %>
+        <button class="btn btn-sm" name="action" value="feature"><%= v.featured ? 'Unfeature' : 'Feature' %></button>
+        <button class="btn btn-sm" name="action" value="<%= v.access === 'premium' ? 'free' : 'premium' %>">Make <%= v.access === 'premium' ? 'free' : 'premium' %></button>
+      </form>
+      <% } else if (v.status === 'processing') { %>
+      <form method="post" action="/admin/videos/<%= v.id %>/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm">Retry now</button></form>
+      <% } %>
+      <a class="btn btn-sm" href="/studio/video/<%= v.id %>/edit">Edit</a>
+      <% if (!(v.status === 'processing' && v.quarantine_file)) { %>
+      <form method="post" action="/studio/video/<%= v.id %>/delete" onsubmit="return confirm('Delete permanently?')">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="back" value="admin"><button class="btn btn-sm btn-danger">Delete</button>
+      </form>
+      <% } %>
+    </td>
+  </tr>
+  <% }) %>
+</table>
+<% if (!videos.length) { %><p class="empty">Nothing here.</p><% } %>
+<%- include('../partials/foot') %>

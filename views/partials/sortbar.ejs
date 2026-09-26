@@ -1,0 +1,14 @@
+<% function withQ(extra) { var q = Object.assign({}, query, extra); delete q.page; Object.keys(q).forEach(function (k) { if (!q[k]) delete q[k]; }); var s = new URLSearchParams(q).toString(); return s ? '?' + s : '?'; } %>
+<div class="sortbar">
+  <div class="tabs">
+    <a class="<%= sort === 'newest' ? 'active' : '' %>" href="<%= withQ({ sort: '' }) %>">Newest</a>
+    <a class="<%= sort === 'popular' ? 'active' : '' %>" href="<%= withQ({ sort: 'popular' }) %>">Most viewed</a>
+    <a class="<%= sort === 'rated' ? 'active' : '' %>" href="<%= withQ({ sort: 'rated' }) %>">Top rated</a>
+    <a class="<%= sort === 'longest' ? 'active' : '' %>" href="<%= withQ({ sort: 'longest' }) %>">Longest</a>
+  </div>
+  <div class="tabs">
+    <a class="<%= !query.access ? 'active' : '' %>" href="<%= withQ({ access: '' }) %>">All</a>
+    <a class="<%= query.access === 'free' ? 'active' : '' %>" href="<%= withQ({ access: 'free' }) %>">Free</a>
+    <a class="<%= query.access === 'premium' ? 'active' : '' %>" href="<%= withQ({ access: 'premium' }) %>">★ Premium</a>
+  </div>
+</div>

@@ -1,0 +1,28 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Users</h1>
+<form method="get" class="inline-form"><input type="search" name="q" value="<%= q %>" placeholder="Username or email"><button class="btn">Search</button></form>
+<table class="table">
+  <tr><th>User</th><th>Role</th><th>Premium until</th><th>Videos</th><th>Joined</th><th>Actions</th></tr>
+  <% users.forEach(function (u) { %>
+  <tr class="<%= u.banned ? 'inactive' : '' %>">
+    <td><strong><%= u.username %></strong><div class="muted small"><%= u.email %></div><% if (u.banned) { %><span class="badge">banned</span><% } %></td>
+    <td><%= u.role %></td>
+    <td class="small"><%= u.subscription_expires_at || '—' %></td>
+    <td><%= u.videos %></td>
+    <td class="small"><%= u.created_at.slice(0, 10) %></td>
+    <td class="actions">
+      <form method="post" action="/admin/users/<%= u.id %>">
+        <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="q" value="<%= q %>">
+        <% ['member','creator','admin'].filter(function (r) { return r !== u.role; }).forEach(function (r) { %>
+          <button class="btn btn-sm" name="action" value="<%= r %>" <%= r === 'admin' ? "onclick=\"return confirm('Make this user an admin?')\"" : '' %>>Make <%= r %></button>
+        <% }) %>
+        <input type="number" name="days" value="30" min="1" style="width:4.5rem"><button class="btn btn-sm btn-premium" name="action" value="grant">+ Premium days</button>
+        <% if (u.subscription_expires_at) { %><button class="btn btn-sm" name="action" value="revoke">Revoke premium</button><% } %>
+        <button class="btn btn-sm btn-danger" name="action" value="ban"><%= u.banned ? 'Unban' : 'Ban' %></button>
+      </form>
+    </td>
+  </tr>
+  <% }) %>
+</table>
+<%- include('../partials/foot') %>

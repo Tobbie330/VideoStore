@@ -1,0 +1,19 @@
+<%- include('../partials/head') %>
+<% var form = typeof form !== 'undefined' ? form : {}; %>
+<div class="panel narrow">
+  <h1>Create account</h1>
+  <% if (typeof errors !== 'undefined') { %><div class="flash flash-error"><% errors.forEach(function (e) { %><div><%= e %></div><% }) %></div><% } %>
+  <form method="post" action="/register" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Username <input name="username" required pattern="[A-Za-z0-9_]{3,24}" value="<%= form.username || '' %>" autocomplete="username"></label>
+    <label>Email <input type="email" name="email" required value="<%= form.email || '' %>" autocomplete="email"></label>
+    <label>Password <input type="password" name="password" required minlength="8" autocomplete="new-password"></label>
+    <% if (settings.open_creator_signup === '1') { %>
+      <label class="check"><input type="checkbox" name="creator" value="yes"> I want to upload videos (creator account)</label>
+    <% } %>
+    <label class="check"><input type="checkbox" name="adult" value="yes" required> I am 18 or older and agree to the <a href="/terms" target="_blank">Terms</a></label>
+    <button class="btn btn-primary btn-block">Sign up</button>
+  </form>
+  <p class="muted">Have an account? <a href="/login">Log in</a></p>
+</div>
+<%- include('../partials/foot') %>

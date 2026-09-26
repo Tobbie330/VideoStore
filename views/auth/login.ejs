@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<div class="panel narrow">
+  <h1>Log in</h1>
+  <form method="post" action="/login" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Username or email <input name="login" required autocomplete="username" autofocus></label>
+    <label>Password <input type="password" name="password" required autocomplete="current-password"></label>
+    <button class="btn btn-primary btn-block">Log in</button>
+  </form>
+  <p class="muted">No account? <a href="/register">Sign up free</a></p>
+</div>
+<%- include('../partials/foot') %>

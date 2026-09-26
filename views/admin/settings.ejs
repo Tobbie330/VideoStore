@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Settings</h1>
+<form method="post" action="/admin/settings" class="form panel">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <label>Site name <input name="site_name" value="<%= settings.site_name %>" required></label>
+  <label class="check"><input type="checkbox" name="hide_ads_for_subscribers" value="yes" <%= settings.hide_ads_for_subscribers === '1' ? 'checked' : '' %>> Hide ads for premium subscribers</label>
+  <label class="check"><input type="checkbox" name="auto_approve" value="yes" <%= settings.auto_approve === '1' ? 'checked' : '' %>> Publish uploads automatically after the virus scan (skip manual review — not recommended)</label>
+  <label class="check"><input type="checkbox" name="open_creator_signup" value="yes" <%= settings.open_creator_signup === '1' ? 'checked' : '' %>> Let anyone sign up as a creator (otherwise promote users in Users)</label>
+  <button class="btn btn-primary">Save settings</button>
+</form>
+
+<h2>Subscription plans</h2>
+<p class="muted">Payment mode: <strong><%= paymentMode %></strong><%= paymentMode === 'demo' ? ' — subscriptions activate instantly with no charge.' : '' %></p>
+<table class="table">
+  <tr><th>Name</th><th>Price ($)</th><th>Days</th><th>Status</th><th></th></tr>
+  <% plans.forEach(function (p) { %>
+  <% var f = 'plan-' + p.id; %>
+  <tr class="<%= p.active ? '' : 'inactive' %>">
+    <td><input form="<%= f %>" name="name" value="<%= p.name %>"></td>
+    <td><input form="<%= f %>" name="price" type="number" step="0.01" min="0" value="<%= (p.price_cents / 100).toFixed(2) %>"></td>
+    <td><input form="<%= f %>" name="days" type="number" min="1" value="<%= p.days %>"></td>
+    <td><%= p.active ? 'active' : 'hidden' %></td>
+    <td class="actions"><form id="<%= f %>" method="post" action="/admin/plans">
+      <input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= p.id %>">
+      <button class="btn btn-sm" name="action" value="save"><%= p.active ? 'Save' : 'Save & re-enable' %></button><% if (p.active) { %><button class="btn btn-sm btn-danger" name="action" value="delete">Hide</button><% } %>
+    </form></td>
+  </tr>
+  <% }) %>
+  <tr>
+    <td><input form="plan-new" name="name" placeholder="New plan"></td>
+    <td><input form="plan-new" name="price" type="number" step="0.01" min="0" placeholder="9.99"></td>
+    <td><input form="plan-new" name="days" type="number" min="1" placeholder="30"></td>
+    <td></td><td><form id="plan-new" method="post" action="/admin/plans"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm btn-primary">Add plan</button></form></td>
+  </tr>
+</table>
+<%- include('../partials/foot') %>

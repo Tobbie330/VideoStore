@@ -1,0 +1,10 @@
+<%- include('partials/head') %>
+<h1 class="section-title">Tags</h1>
+<input class="filter-input" type="search" placeholder="Filter tags…" oninput="var q=this.value.toLowerCase();document.querySelectorAll('.tag-cloud .tag').forEach(function(a){a.style.display=a.dataset.name.indexOf(q)>-1?'':'none'})">
+<div class="tag-cloud">
+  <% var max = tags.length ? tags[0].n : 1; tags.slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (t) { %>
+    <a class="tag" data-name="<%= t.name %>" style="font-size: <%= (0.85 + 0.8 * t.n / max).toFixed(2) %>rem" href="/tag/<%= t.slug %>">#<%= t.name %> <small><%= t.n %></small></a>
+  <% }) %>
+  <% if (!tags.length) { %><p class="empty">No tags yet.</p><% } %>
+</div>
+<%- include('partials/foot') %>

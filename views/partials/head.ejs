@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="rating" content="adult">
+  <meta name="RATING" content="RTA-5042-1996-1400-1577-RTA">
+  <title><%= title ? title + ' · ' : '' %><%= settings.site_name %></title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="csrf" content="<%= csrf %>">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="/"><%= settings.site_name %></a>
+    <form class="search" action="/search" method="get" role="search">
+      <input type="search" name="q" placeholder="Search videos, tags…" value="<%= path === '/search' ? (query.q || '') : '' %>" aria-label="Search">
+      <button type="submit" aria-label="Search">🔍</button>
+    </form>
+    <nav class="user-nav">
+      <% if (!isSubscriber) { %><a class="btn btn-premium" href="/premium">★ Premium</a><% } %>
+      <% if (user && (user.role === 'creator' || user.role === 'admin')) { %><a class="btn btn-primary" href="/studio/upload">⬆ Upload</a><% } %>
+      <% if (user) { %>
+        <details class="dropdown">
+          <summary><%= user.username %><% if (isSubscriber) { %> <span class="badge badge-premium">★</span><% } %></summary>
+          <div class="dropdown-menu">
+            <a href="/account">My account</a>
+            <% if (user.role !== 'member') { %><a href="/studio">My studio</a><% } %>
+            <% if (user.role === 'admin') { %><a href="/admin">Admin panel</a><% } %>
+            <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button>Log out</button></form>
+          </div>
+        </details>
+      <% } else { %>
+        <a class="btn" href="/login">Log in</a>
+        <a class="btn btn-outline" href="/register">Sign up</a>
+      <% } %>
+    </nav>
+  </div>
+  <nav class="mainnav">
+    <a href="/" class="<%= path === '/' ? 'active' : '' %>">Home</a>
+    <a href="/categories" class="<%= path === '/categories' ? 'active' : '' %>">Categories</a>
+    <a href="/tags" class="<%= path === '/tags' ? 'active' : '' %>">Tags</a>
+    <a href="/?access=free" class="<%= path === '/' && query.access === 'free' ? 'active' : '' %>">Free</a>
+    <a href="/?access=premium" class="<%= path === '/' && query.access === 'premium' ? 'active' : '' %>">★ Premium</a>
+    <span class="sep"></span>
+    <% navCategories.slice(0, 10).forEach(function (c) { %>
+      <a href="/category/<%= c.slug %>" class="<%= path === '/category/' + c.slug ? 'active' : '' %>"><%= c.name %></a>
+    <% }) %>
+  </nav>
+</header>
+<% if (showAds) { %><div class="ad-row"><%- include('ad', { slot: 'header' }) %></div><% } %>
+<main class="container">
+<% if (flash) { %><div class="flash flash-<%= flash.type %>"><%= flash.message %></div><% } %>

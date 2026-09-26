@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<% if (typeof featured !== 'undefined' && featured.length) { %>
+  <section class="section">
+    <h2 class="section-title">⭐ Featured</h2>
+    <div class="grid grid-featured">
+      <% featured.forEach(function (v) { %><%- include('partials/card', { v: v }) %><% }) %>
+    </div>
+  </section>
+<% } %>
+<section class="section">
+  <div class="section-head">
+    <div>
+      <h1 class="section-title"><%= heading %> <small><%= total %> videos</small></h1>
+      <% if (typeof subheading !== 'undefined' && subheading) { %><p class="muted"><%= subheading %></p><% } %>
+    </div>
+  </div>
+  <%- include('partials/sortbar') %>
+  <% if (tags && tags.length) { %>
+    <div class="tag-strip">
+      <% tags.forEach(function (t) { %><a class="tag" href="/tag/<%= t.slug %>">#<%= t.name %></a><% }) %>
+    </div>
+  <% } %>
+  <%- include('partials/grid') %>
+  <%- include('partials/pagination') %>
+</section>
+<%- include('partials/foot') %>

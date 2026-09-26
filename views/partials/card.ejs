@@ -1,0 +1,15 @@
+<a class="card" href="/video/<%= v.id %>/<%= v.slug %>">
+  <div class="thumb">
+    <% if (v.thumb_file) { %><img src="/media/thumb/<%= v.id %>" alt="" loading="lazy"><% } %>
+    <span class="duration"><%= fmtDuration(v.duration_seconds) %></span>
+    <% if (v.access === 'premium') { %><span class="badge badge-premium corner">★ Premium</span><% } else { %><span class="badge badge-free corner">Free</span><% } %>
+  </div>
+  <div class="card-body">
+    <h3 class="card-title"><%= v.title %></h3>
+    <div class="card-meta">
+      <span><%= v.uploader %></span>
+      <span><%= fmtViews(v.views) %> views</span>
+      <% if (v.vote_count > 0) { %><span class="rating">👍 <%= Math.round(v.likes / v.vote_count * 100) %>%</span><% } %>
+    </div>
+  </div>
+</a>

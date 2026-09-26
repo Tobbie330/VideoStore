@@ -1,0 +1,70 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Ads &amp; partners</h1>
+<p class="muted">Each slot rotates between its active ads by weight. Premium subscribers <%= settings.hide_ads_for_subscribers === '1' ? "don't see ads" : 'also see ads' %> (change in Settings).</p>
+
+<h2>Partners</h2>
+<table class="table">
+  <tr><th>Partner</th><th>Ads</th><th>Impressions</th><th>Clicks</th><th>CTR</th></tr>
+  <% partners.forEach(function (p) { %>
+    <tr><td><strong><%= p.partner %></strong></td><td><%= p.ads %></td><td><%= p.impressions %></td><td><%= p.clicks %></td>
+      <td><%= p.impressions ? (p.clicks / p.impressions * 100).toFixed(2) + '%' : '—' %></td></tr>
+  <% }) %>
+</table>
+
+<h2><%= edit ? 'Edit ad' : 'Add an ad' %></h2>
+<% var a = edit || { active: 1, weight: 1, kind: 'image' }; %>
+<form method="post" action="/admin/ads" enctype="multipart/form-data" class="form panel">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% if (edit) { %><input type="hidden" name="id" value="<%= edit.id %>"><% } %>
+  <div class="row">
+    <label>Partner <input name="partner" required value="<%= a.partner || '' %>" list="partner-list" placeholder="Who is paying for this ad"></label>
+    <datalist id="partner-list"><% partners.forEach(function (p) { %><option value="<%= p.partner %>"><% }) %></datalist>
+    <label>Ad name <input name="name" required value="<%= a.name || '' %>" placeholder="e.g. Summer campaign"></label>
+  </div>
+  <div class="row">
+    <label>Slot
+      <select name="slot"><% Object.keys(SLOTS).forEach(function (k) { %><option value="<%= k %>" <%= a.slot === k ? 'selected' : '' %>><%= SLOTS[k].label %> (<%= SLOTS[k].size %>)</option><% }) %></select>
+    </label>
+    <label>Type
+      <select name="kind" onchange="document.querySelectorAll('[data-kind]').forEach(function(e){e.hidden=e.dataset.kind!==this.value}.bind(this))">
+        <option value="image" <%= a.kind === 'image' ? 'selected' : '' %>>Image banner + link</option>
+        <option value="html" <%= a.kind === 'html' ? 'selected' : '' %>>HTML / ad-network embed code</option>
+      </select>
+    </label>
+  </div>
+  <div data-kind="image" <%= a.kind === 'html' ? 'hidden' : '' %>>
+    <label>Banner image <% if (a.image_file) { %><img class="ad-preview" src="/ads/img/<%= a.image_file %>" alt=""><% } %><input type="file" name="image" accept="image/*"><small class="muted">Virus-scanned and stripped of metadata on upload.</small></label>
+    <label>Click-through URL <input name="target_url" type="url" value="<%= a.target_url || '' %>" placeholder="https://partner.example/landing"></label>
+  </div>
+  <div data-kind="html" <%= a.kind !== 'html' ? 'hidden' : '' %>>
+    <label>Embed code <textarea name="html" rows="5" placeholder="Paste the code your ad network gave you"><%= a.html || '' %></textarea><small class="muted">Runs inside a sandboxed frame so partner code can't access your site or users' logins.</small></label>
+  </div>
+  <div class="row">
+    <label>Weight (1–100) <input name="weight" type="number" min="1" max="100" value="<%= a.weight %>"></label>
+    <label>Start date <input name="starts_at" type="date" value="<%= a.starts_at || '' %>"></label>
+    <label>End date <input name="ends_at" type="date" value="<%= a.ends_at || '' %>"></label>
+  </div>
+  <label class="check"><input type="checkbox" name="active" value="yes" <%= a.active ? 'checked' : '' %>> Active</label>
+  <button class="btn btn-primary"><%= edit ? 'Save ad' : 'Create ad' %></button>
+  <% if (edit) { %><a class="btn btn-ghost" href="/admin/ads">Cancel</a><% } %>
+</form>
+
+<h2>All ads</h2>
+<table class="table">
+  <tr><th>Ad</th><th>Partner</th><th>Slot</th><th>Dates</th><th>Weight</th><th>Impr.</th><th>Clicks</th><th></th></tr>
+  <% ads.forEach(function (ad) { %>
+  <tr class="<%= ad.active ? '' : 'inactive' %>">
+    <td><%= ad.name %><% if (!ad.active) { %> <span class="badge">paused</span><% } %></td>
+    <td><%= ad.partner %></td>
+    <td><%= SLOTS[ad.slot] ? SLOTS[ad.slot].label : ad.slot %></td>
+    <td class="small"><%= ad.starts_at || '…' %> → <%= ad.ends_at || '…' %></td>
+    <td><%= ad.weight %></td><td><%= ad.impressions %></td><td><%= ad.clicks %></td>
+    <td class="actions">
+      <a class="btn btn-sm" href="?edit=<%= ad.id %>">Edit</a>
+      <form method="post" action="/admin/ads/<%= ad.id %>/delete" onsubmit="return confirm('Delete this ad?')"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm btn-danger">Delete</button></form>
+    </td>
+  </tr>
+  <% }) %>
+</table>
+<%- include('../partials/foot') %>

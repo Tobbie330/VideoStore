@@ -1,0 +1,12 @@
+<%- include('../partials/head') %>
+<div class="panel">
+  <h1>Edit video</h1>
+  <form method="post" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <%- include('_fields', { v: video, tagsValue: tags }) %>
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-ghost" href="/studio">Cancel</a>
+  </form>
+</div>
+<script src="/static/js/upload.js" defer></script>
+<%- include('../partials/foot') %>

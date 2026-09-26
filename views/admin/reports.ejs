@@ -1,0 +1,25 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Reports</h1>
+<div class="tabs"><a class="<%= !resolved ? 'active' : '' %>" href="?">Open</a><a class="<%= resolved ? 'active' : '' %>" href="?resolved=1">Resolved</a></div>
+<table class="table">
+  <tr><th>Video</th><th>Reason</th><th>Details</th><th>By</th><th>When</th><th></th></tr>
+  <% reports.forEach(function (r) { %>
+  <tr>
+    <td><a href="/video/<%= r.video_id %>/<%= r.slug %>" target="_blank"><%= r.title %></a></td>
+    <td><strong><%= r.reason %></strong></td>
+    <td class="small"><%= r.details %></td>
+    <td><%= r.username || 'guest' %></td>
+    <td class="small"><%= r.created_at %></td>
+    <td class="actions"><% if (!r.resolved) { %>
+      <form method="post" action="/admin/reports/<%= r.id %>/resolve">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <button class="btn btn-sm btn-danger" name="takedown" value="yes">Take down video</button>
+        <button class="btn btn-sm" name="takedown" value="no">Dismiss</button>
+      </form><% } %>
+    </td>
+  </tr>
+  <% }) %>
+</table>
+<% if (!reports.length) { %><p class="empty">No reports.</p><% } %>
+<%- include('../partials/foot') %>
