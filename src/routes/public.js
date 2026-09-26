@@ -19,8 +19,35 @@ router.post('/age-check', (req, res) => {
   res.redirect(to);
 });
 
-for (const page of ['terms', 'privacy', '2257', 'dmca']) {
-  router.get(`/${page}`, (req, res) => res.render(`legal/${page}`, { title: page.toUpperCase() }));
+// Legal pages: text written in Admin → Legal pages if set, otherwise the
+// built-in template filled in with the business details from Settings.
+const LEGAL_TITLES = { terms: 'Terms of Service', privacy: 'Privacy Policy', 2257: '18 U.S.C. 2257 Statement', dmca: 'DMCA & Content Removal' };
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+// Plain text -> HTML: blank line = new paragraph, "# " / "## " = headings.
+function legalTextToHtml(text) {
+  return String(text).replace(/\r/g, '').split(/\n{2,}/).map((block) => {
+    const b = block.trim();
+    if (!b) return '';
+    if (b.startsWith('## ')) return `<h2>${escapeHtml(b.slice(3))}</h2>`;
+    if (b.startsWith('# ')) return `<h1>${escapeHtml(b.slice(2))}</h1>`;
+    return `<p>${escapeHtml(b).replace(/\n/g, '<br>')}</p>`;
+  }).join('\n');
+}
+for (const page of Object.keys(LEGAL_TITLES)) {
+  router.get(`/${page}`, (req, res) => {
+    const custom = res.locals.settings[`legal_${page}`];
+    if (custom && custom.trim()) {
+      return res.render('legal/custom', { title: LEGAL_TITLES[page], html: legalTextToHtml(custom) });
+    }
+    const st = res.locals.settings;
+    res.render(`legal/${page}`, {
+      title: LEGAL_TITLES[page],
+      biz: st.business_name || st.site_name,
+      contact: st.contact_email || '[contact email — set in Admin → Settings]',
+    });
+  });
 }
 
 function listingParams(req) {

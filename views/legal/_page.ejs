@@ -1,3 +1,3 @@
 <%- include('../partials/head') %>
 <div class="panel legal">
-  <p class="flash flash-info small">Template text — have a lawyer review and replace this page before launch.</p>
+  <p class="flash flash-info small">Template text. <% if (user && user.role === 'admin') { %>Have a lawyer review it, then paste the final version in <a href="/admin/legal">Admin → Legal pages</a>.<% } else { %>Last updated by the site operator.<% } %></p>

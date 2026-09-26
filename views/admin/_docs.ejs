@@ -1,0 +1,15 @@
+<div class="doc-grid">
+  <% docs.forEach(function (d) { var isImg = /^image\/(jpeg|png|webp)$/.test(d.mime); %>
+    <div class="doc">
+      <% if (d.status === 'stored') { %>
+        <a href="/admin/docs/<%= d.id %>" target="_blank" rel="noopener">
+          <% if (isImg) { %><img src="/admin/docs/<%= d.id %>" alt="<%= d.kind %>"><% } else { %><div class="pdf">📄</div><% } %>
+        </a>
+      <% } %>
+      <strong><%= ({ id_front: 'ID — front', id_back: 'ID — back', selfie: 'Selfie with ID', release: 'Release / ID' })[d.kind] || d.kind %></strong>
+      <div class="muted small"><%= d.original_name %><% if (d.video_title) { %> · for “<%= d.video_title %>”<% } %></div>
+      <% if (d.status !== 'stored') { %><div class="<%= d.status === 'infected' ? 'warn' : 'muted' %>"><%= d.status === 'quarantine' ? 'Waiting for virus scan' : d.status %></div><% } %>
+    </div>
+  <% }) %>
+  <% if (!docs.length) { %><p class="muted">None.</p><% } %>
+</div>

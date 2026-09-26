@@ -41,6 +41,8 @@ CREATE TABLE IF NOT EXISTS videos (
   access TEXT NOT NULL DEFAULT 'free' CHECK (access IN ('free','premium')),
   status TEXT NOT NULL DEFAULT 'processing',
   status_detail TEXT NOT NULL DEFAULT '',
+  -- 'solo' = only the uploader appears; 'releases' = release forms/IDs attached for others
+  performers TEXT NOT NULL DEFAULT 'solo',
   attempts INTEGER NOT NULL DEFAULT 0,
   next_attempt_at TEXT,
   quarantine_file TEXT,
@@ -122,6 +124,39 @@ CREATE TABLE IF NOT EXISTS ads (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Creator identity verification (18 U.S.C. 2257 style records).
+CREATE TABLE IF NOT EXISTS creator_applications (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  legal_name TEXT NOT NULL,
+  date_of_birth TEXT NOT NULL,
+  country TEXT NOT NULL,
+  stage_name TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  review_note TEXT NOT NULL DEFAULT '',
+  reviewed_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- ID photos, selfies and release forms. Stored encrypted, only admins can view.
+-- status: quarantine (waiting for virus scan) -> stored | infected
+CREATE TABLE IF NOT EXISTS private_docs (
+  id INTEGER PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  application_id INTEGER REFERENCES creator_applications(id) ON DELETE RESTRICT,
+  -- Kept when a video is deleted: 2257 records must be retained after removal.
+  video_id INTEGER REFERENCES videos(id) ON DELETE SET NULL,
+  video_title TEXT NOT NULL DEFAULT '',
+  kind TEXT NOT NULL,
+  original_name TEXT NOT NULL DEFAULT '',
+  mime TEXT NOT NULL DEFAULT 'application/octet-stream',
+  status TEXT NOT NULL DEFAULT 'quarantine',
+  quarantine_file TEXT,
+  stored_file TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
@@ -137,8 +172,20 @@ CREATE TABLE IF NOT EXISTS sessions (
 const DEFAULT_SETTINGS = {
   site_name: 'VideoStore',
   hide_ads_for_subscribers: '1',
-  auto_approve: '0',
-  open_creator_signup: '0',
+  creator_applications_open: '1',
+  // Region blocking (item: age-verification laws). Comma-separated ISO codes:
+  // countries ("GB") or country-region ("US-TX").
+  blocked_regions: '',
+  // Business details used on the legal pages.
+  business_name: '',
+  business_address: '',
+  contact_email: '',
+  custodian_name: '',
+  custodian_address: '',
+  legal_terms: '',
+  legal_privacy: '',
+  legal_2257: '',
+  legal_dmca: '',
 };
 const insertSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) insertSetting.run(k, v);

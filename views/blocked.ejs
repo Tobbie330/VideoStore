@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Not available in your region · <%= settings.site_name %></title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="age-body">
+  <div class="age-box">
+    <div class="logo"><%= settings.site_name %></div>
+    <h1>Not available in your region</h1>
+    <p>Because of local laws on access to adult content, <%= settings.site_name %> is currently not available where you are<%= where ? ' (' + where + ')' : '' %>.</p>
+    <p class="muted small"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a> · <a href="/2257">2257</a> · <a href="/dmca">Content removal</a></p>
+  </div>
+</body>
+</html>

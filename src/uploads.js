@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const multer = require('multer');
 const config = require('./config');
 const { csrfCheck } = require('./middleware');
+const privateDocs = require('./privateDocs');
 
 fs.mkdirSync(config.quarantineDir, { recursive: true });
 
@@ -16,6 +17,7 @@ const storage = multer.diskStorage({
 
 const VIDEO_EXT = /\.(mp4|m4v|mov|webm|mkv|avi|wmv|flv|mpg|mpeg|3gp|ts)$/i;
 const IMAGE_EXT = /\.(jpe?g|png|webp|gif|bmp)$/i;
+const DOC_FIELDS = ['releases', 'id_front', 'id_back', 'selfie'];
 
 function fileFilter(req, file, cb) {
   if (file.fieldname === 'video') {
@@ -24,10 +26,14 @@ function fileFilter(req, file, cb) {
   if (file.fieldname === 'thumbnail' || file.fieldname === 'image') {
     return cb(null, file.mimetype.startsWith('image/') || IMAGE_EXT.test(file.originalname));
   }
+  if (DOC_FIELDS.includes(file.fieldname)) {
+    if (privateDocs.isAllowed(file)) return cb(null, true);
+    return cb(new Error(`"${file.originalname}" must be a photo (JPG, PNG, WEBP, HEIC) or a PDF.`));
+  }
   cb(null, false);
 }
 
-const upload = multer({ storage, fileFilter, limits: { fileSize: config.maxUploadBytes, files: 2, fields: 30 } });
+const upload = multer({ storage, fileFilter, limits: { fileSize: config.maxUploadBytes, files: 13, fields: 40 } });
 
 function allFiles(req) {
   if (req.file) return [req.file];

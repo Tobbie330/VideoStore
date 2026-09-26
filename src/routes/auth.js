@@ -1,7 +1,8 @@
 'use strict';
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { db, getSettings } = require('../db');
+const config = require('../config');
+const { db } = require('../db');
 const { flash, requireLogin } = require('../middleware');
 
 const router = express.Router();
@@ -39,15 +40,20 @@ function logIn(req, res, userId) {
 
 router.get('/login', (req, res) => res.render('auth/login', { title: 'Log in' }));
 
+function clientIp(req) {
+  return (config.trustProxy && config.clientIpHeader && req.get(config.clientIpHeader)) || req.ip;
+}
+
 router.post('/login', (req, res) => {
-  if (throttled(req.ip)) {
+  const ip = clientIp(req);
+  if (throttled(ip)) {
     flash(req, 'error', 'Too many attempts. Try again in 15 minutes.');
     return res.redirect('/login');
   }
   const login = String(req.body.login || '').trim();
   const user = db.prepare('SELECT * FROM users WHERE email = ? OR username = ?').get(login, login);
   if (!user || !bcrypt.compareSync(String(req.body.password || ''), user.password_hash)) {
-    recordFailure(req.ip);
+    recordFailure(ip);
     flash(req, 'error', 'Wrong username/email or password.');
     return res.redirect('/login');
   }
@@ -75,9 +81,8 @@ router.post('/register', (req, res) => {
   if (errors.length) {
     return res.status(400).render('auth/register', { title: 'Sign up', errors, form: { username, email } });
   }
-  const role = req.body.creator === 'yes' && getSettings().open_creator_signup === '1' ? 'creator' : 'member';
-  const r = db.prepare('INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)')
-    .run(username, email, bcrypt.hashSync(password, 12), role);
+  const r = db.prepare("INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, 'member')")
+    .run(username, email, bcrypt.hashSync(password, 12));
   logIn(req, res, Number(r.lastInsertRowid));
 });
 

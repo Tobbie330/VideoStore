@@ -16,7 +16,7 @@
     <td class="mini-thumb"><% if (v.thumb_file) { %><img src="/media/thumb/<%= v.id %>" alt=""><% } %></td>
     <td>
       <% if (v.video_file) { %><a href="/video/<%= v.id %>/<%= v.slug %>" target="_blank"><%= v.title %></a><% } else { %><%= v.title %><% } %>
-      <div class="muted small"><%= v.category_name || '—' %> · <%= fmtDuration(v.duration_seconds) %> · <%= v.created_at %><% if (v.featured) { %> · ⭐ featured<% } %></div>
+      <div class="muted small"><%= v.category_name || '—' %> · <%= fmtDuration(v.duration_seconds) %> · <%= v.created_at %> · <%= v.performers === 'solo' ? 'solo' : 'with releases' %><% if (v.featured) { %> · ⭐ featured<% } %></div>
       <% if (v.open_reports) { %><div class="status status-rejected"><%= v.open_reports %> open report(s)</div><% } %>
     </td>
     <td><%= v.username %></td>
@@ -26,7 +26,7 @@
       <% if (v.video_file) { %>
       <form method="post" action="/admin/videos/<%= v.id %>/status">
         <input type="hidden" name="_csrf" value="<%= csrf %>">
-        <% if (v.status !== 'approved') { %><button class="btn btn-sm btn-primary" name="action" value="approve">Approve</button><% } %>
+        <% if (v.status === 'rejected') { %><button class="btn btn-sm" name="action" value="approve">Restore</button><% } %>
         <% if (v.status !== 'rejected') { %><button class="btn btn-sm btn-danger" name="action" value="reject">Reject</button><% } %>
         <button class="btn btn-sm" name="action" value="feature"><%= v.featured ? 'Unfeature' : 'Feature' %></button>
         <button class="btn btn-sm" name="action" value="<%= v.access === 'premium' ? 'free' : 'premium' %>">Make <%= v.access === 'premium' ? 'free' : 'premium' %></button>
@@ -34,6 +34,7 @@
       <% } else if (v.status === 'processing') { %>
       <form method="post" action="/admin/videos/<%= v.id %>/retry"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="btn btn-sm">Retry now</button></form>
       <% } %>
+      <a class="btn btn-sm <%= v.status === 'pending' ? 'btn-primary' : '' %>" href="/admin/videos/<%= v.id %>/review">Review</a>
       <a class="btn btn-sm" href="/studio/video/<%= v.id %>/edit">Edit</a>
       <% if (!(v.status === 'processing' && v.quarantine_file)) { %>
       <form method="post" action="/studio/video/<%= v.id %>/delete" onsubmit="return confirm('Delete permanently?')">

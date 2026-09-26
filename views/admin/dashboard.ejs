@@ -10,6 +10,7 @@
   <a class="stat" href="/admin/videos?status=processing"><b><%= stats.processing %></b>Processing</a>
   <a class="stat" href="/admin/videos?status=infected"><b><%= stats.blocked %></b>Blocked / failed</a>
   <a class="stat <%= stats.reports ? 'stat-alert' : '' %>" href="/admin/reports"><b><%= stats.reports %></b>Open reports</a>
+  <a class="stat <%= stats.applications ? 'stat-alert' : '' %>" href="/admin/creators"><b><%= stats.applications %></b>Creator applications</a>
   <a class="stat" href="/admin/users"><b><%= stats.users %></b>Users</a>
   <a class="stat" href="/admin/users"><b><%= stats.subscribers %></b>Active subscribers</a>
   <div class="stat"><b><%= fmtMoney(stats.revenue30) %></b>Revenue (30 days)</div>

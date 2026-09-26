@@ -1,0 +1,53 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<p><a href="/admin/videos?status=<%= video.status %>">← Videos</a></p>
+<div class="review">
+  <div>
+    <% if (video.video_file) { %>
+      <div class="player"><video controls preload="metadata" poster="/media/thumb/<%= video.id %>"><source src="/media/video/<%= video.id %>" type="video/mp4"></video></div>
+    <% } else { %>
+      <div class="flash flash-info">No playable file: <%= video.status %> — <%= video.status_detail %></div>
+    <% } %>
+    <h1 class="video-title"><%= video.title %> <span class="badge"><%= video.status %></span></h1>
+    <p class="muted"><%= video.access %> · <%= video.category_name || 'no category' %> · <%= fmtDuration(video.duration_seconds) %> · uploaded <%= video.created_at %></p>
+    <% if (tags.length) { %><div class="tag-strip"><% tags.forEach(function (t) { %><span class="tag">#<%= t.name %></span><% }) %></div><% } %>
+    <% if (video.description) { %><div class="description"><%= video.description %></div><% } %>
+    <% if (reports.length) { %>
+      <h2>Reports</h2>
+      <% reports.forEach(function (r) { %><div class="flash flash-error small"><strong><%= r.reason %></strong> <%= r.details %> <span class="muted">(<%= r.resolved ? 'resolved' : 'open' %>)</span></div><% }) %>
+    <% } %>
+  </div>
+  <aside>
+    <div class="panel">
+      <h2 style="margin-top:0">Uploader</h2>
+      <dl class="kv">
+        <dt>Account</dt><dd><%= video.username %> (<%= video.uploader_role %>)</dd>
+        <% if (application) { %>
+          <dt>Verified as</dt><dd class="ok"><a href="/admin/creators/<%= application.id %>"><%= application.legal_name %></a></dd>
+          <dt>Date of birth</dt><dd><%= application.date_of_birth %></dd>
+        <% } else { %>
+          <dt>ID check</dt><dd class="<%= video.uploader_role === 'admin' ? 'muted' : 'warn' %>"><%= video.uploader_role === 'admin' ? 'Site admin' : 'NOT VERIFIED' %></dd>
+        <% } %>
+      </dl>
+      <h2>Performers</h2>
+      <% if (video.performers === 'solo') { %>
+        <p>Uploader says <strong>only they</strong> appear. Check that is true.</p>
+      <% } else { %>
+        <p>Uploader attached these release forms / IDs. Check that there is one for <strong>every person</strong> seen in the video, all 18+.</p>
+        <%- include('_docs', { docs: docs }) %>
+      <% } %>
+      <% if (video.video_file) { %>
+      <form method="post" action="/admin/videos/<%= video.id %>/status" class="form">
+        <input type="hidden" name="_csrf" value="<%= csrf %>">
+        <input type="hidden" name="back" value="review">
+        <label>Rejection reason (optional) <input name="reason" maxlength="300"></label>
+        <div class="actions">
+          <% if (video.status !== 'approved') { %><button class="btn btn-primary" name="action" value="approve">Approve &amp; publish</button><% } %>
+          <% if (video.status !== 'rejected') { %><button class="btn btn-danger" name="action" value="reject">Reject</button><% } %>
+        </div>
+      </form>
+      <% } %>
+    </div>
+  </aside>
+</div>
+<%- include('../partials/foot') %>

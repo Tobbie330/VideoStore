@@ -4,7 +4,7 @@ const express = require('express');
 const session = require('express-session');
 const config = require('./src/config');
 const { db, seed } = require('./src/db');
-const { SqliteStore, loadUser, csrfCheck, ageGate } = require('./src/middleware');
+const { SqliteStore, loadUser, csrfCheck, ageGate, regionBlock } = require('./src/middleware');
 const { pickAd } = require('./src/ads');
 const V = require('./src/videos');
 const pipeline = require('./src/pipeline');
@@ -19,7 +19,7 @@ seed();
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-if (config.trustProxy) app.set('trust proxy', 1);
+if (config.trustProxy) app.set('trust proxy', config.trustProxy);
 app.disable('x-powered-by');
 
 app.use((req, res, next) => {
@@ -41,9 +41,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   rolling: true,
-  cookie: { httpOnly: true, sameSite: 'lax', secure: config.isProd && config.trustProxy, maxAge: 30 * 24 * 3600 * 1000 },
+  cookie: { httpOnly: true, sameSite: 'lax', secure: config.isProd && config.trustProxy > 0, maxAge: 30 * 24 * 3600 * 1000 },
 }));
 app.use(loadUser);
+app.use(regionBlock);
 app.use(csrfCheck);
 
 app.locals.pickAd = pickAd;
@@ -63,6 +64,7 @@ app.use('/ads/img', express.static(config.adDir, { maxAge: '7d', index: false })
 app.use(ageGate);
 app.use('/', require('./src/routes/auth'));
 app.use('/', require('./src/routes/billing').router);
+app.use('/', require('./src/routes/creators'));
 app.use('/', require('./src/routes/public'));
 app.use('/studio', require('./src/routes/studio'));
 app.use('/admin', require('./src/routes/admin'));

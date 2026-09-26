@@ -25,7 +25,7 @@
           <summary><%= user.username %><% if (isSubscriber) { %> <span class="badge badge-premium">★</span><% } %></summary>
           <div class="dropdown-menu">
             <a href="/account">My account</a>
-            <% if (user.role !== 'member') { %><a href="/studio">My studio</a><% } %>
+            <% if (user.role !== 'member') { %><a href="/studio">My studio</a><% } else if (settings.creator_applications_open === '1') { %><a href="/become-creator">Become a creator</a><% } %>
             <% if (user.role === 'admin') { %><a href="/admin">Admin panel</a><% } %>
             <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button>Log out</button></form>
           </div>

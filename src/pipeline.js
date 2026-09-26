@@ -11,9 +11,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const config = require('./config');
-const { db, getSettings } = require('./db');
+const { db } = require('./db');
 const scanner = require('./scanner');
 const media = require('./media');
+const privateDocs = require('./privateDocs');
 
 const MAX_ATTEMPTS = 20;
 let current = null; // promise of the run in progress
@@ -50,6 +51,17 @@ async function scanOrThrow(file, label) {
 async function processVideo(video) {
   const qVideo = path.join(config.quarantineDir, video.quarantine_file);
   const qThumb = video.quarantine_thumb ? path.join(config.quarantineDir, video.quarantine_thumb) : null;
+
+  // 0. Release forms / performer IDs attached to this upload: scan + encrypt.
+  const docs = db.prepare("SELECT * FROM private_docs WHERE video_id = ? AND status = 'quarantine'").all(video.id);
+  if (docs.length) setStatus(video.id, 'processing', 'Scanning release forms');
+  for (const doc of docs) {
+    if (!(await privateDocs.processDoc(doc))) {
+      const err = new Error(`Release form "${doc.original_name}" infected`);
+      err.infected = true;
+      throw err;
+    }
+  }
 
   // 1. Virus scan the raw upload (and the custom thumbnail) before any parsing.
   setStatus(video.id, 'processing', 'Scanning for viruses');
@@ -98,8 +110,9 @@ async function processVideo(video) {
   fs.renameSync(tmpThumb, path.join(config.thumbDir, thumbName));
   rm(qVideo); rm(qThumb);
 
+  // Every upload waits for a person to review it, except an admin's own uploads.
   const owner = db.prepare('SELECT role FROM users WHERE id = ?').get(video.user_id);
-  const approve = getSettings().auto_approve === '1' || (owner && owner.role === 'admin');
+  const approve = !!owner && owner.role === 'admin';
   db.prepare(`UPDATE videos SET video_file = ?, thumb_file = ?, duration_seconds = ?,
       quarantine_file = NULL, quarantine_thumb = NULL, status = ?, status_detail = '',
       published_at = CASE WHEN ? = 'approved' THEN datetime('now') ELSE published_at END
@@ -118,12 +131,14 @@ async function handle(video) {
       if (video.quarantine_thumb) rm(path.join(config.quarantineDir, video.quarantine_thumb));
       db.prepare("UPDATE videos SET status = 'infected', status_detail = ?, quarantine_file = NULL, quarantine_thumb = NULL WHERE id = ?")
         .run(e.message, video.id);
+      privateDocs.removeDocs('video_id', video.id);
     } else if (e.permanent || video.attempts + 1 >= MAX_ATTEMPTS) {
       console.warn(`[pipeline] video ${video.id} failed: ${e.message}`);
       rm(path.join(config.quarantineDir, video.quarantine_file));
       if (video.quarantine_thumb) rm(path.join(config.quarantineDir, video.quarantine_thumb));
       db.prepare("UPDATE videos SET status = 'failed', status_detail = ?, quarantine_file = NULL, quarantine_thumb = NULL WHERE id = ?")
         .run(e.message.slice(0, 500), video.id);
+      privateDocs.removeDocs('video_id', video.id);
     } else {
       // Scanner down etc. - keep it in quarantine and retry with backoff.
       const delay = Math.min(60 * 30, 15 * 2 ** video.attempts);

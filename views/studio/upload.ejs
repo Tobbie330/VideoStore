@@ -10,10 +10,19 @@
       <div class="dz-file" hidden></div>
     </div>
     <%- include('_fields', { v: {}, tagsValue: '' }) %>
+    <fieldset class="access-pick performers-pick">
+      <legend>Who appears in this video?</legend>
+      <label class="radio-card"><input type="radio" name="performers" value="solo" required><span><strong>Only me</strong><br><small>I am the only person in it (my ID is already verified)</small></span></label>
+      <label class="radio-card"><input type="radio" name="performers" value="releases"><span><strong>Me and/or other people</strong><br><small>I'll attach a signed release + photo ID for each other person</small></span></label>
+    </fieldset>
+    <label class="releases-field" hidden>Release forms &amp; photo IDs for everyone else in the video
+      <input type="file" name="releases" accept="image/*,application/pdf" multiple>
+      <small class="muted">Up to 10 files (PDF or photos). Encrypted and only visible to our compliance team.</small>
+    </label>
     <label>Custom thumbnail (optional) <input type="file" name="thumbnail" accept="image/*"><small class="muted">If you skip this, one is picked from the video automatically.</small></label>
     <label class="check compliance"><input type="checkbox" name="compliance" value="yes" required>
       I confirm every person in this video was 18 or older at the time of filming, gave consent to be filmed and to have
-      this video published, and that I own the rights to it and keep age/ID records as required by law (18 U.S.C. 2257).</label>
+      this video published, that I own the rights to it, and that the release forms and IDs I attached are genuine (18 U.S.C. 2257).</label>
     <div class="progress" hidden><div class="progress-bar"></div><span class="progress-text"></span></div>
     <button class="btn btn-primary btn-lg" id="upload-btn">Upload</button>
   </form>

@@ -1,0 +1,15 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Legal pages</h1>
+<p class="muted">Leave a box empty to show the built-in template (which uses the business details from <a href="/admin/settings">Settings</a>).
+  Paste your lawyer's final text here. Formatting: a blank line starts a new paragraph, a line starting with <code>## </code> is a heading.</p>
+<form method="post" class="form">
+  <input type="hidden" name="_csrf" value="<%= csrf %>">
+  <% Object.keys(LEGAL_PAGES).forEach(function (k) { %>
+    <label><%= LEGAL_PAGES[k] %> <small class="muted">— <a href="/<%= k %>" target="_blank">view page</a><%= settings['legal_' + k] ? '' : ' · using template' %></small>
+      <textarea name="legal_<%= k %>" rows="8"><%= settings['legal_' + k] %></textarea>
+    </label>
+  <% }) %>
+  <button class="btn btn-primary">Save legal pages</button>
+</form>
+<%- include('../partials/foot') %>

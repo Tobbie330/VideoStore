@@ -1,13 +1,32 @@
 services:
+  # HTTPS reverse proxy (automatic Let's Encrypt certificates).
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [app]
+    networks: [frontend]
+
   app:
     build: .
     restart: unless-stopped
+    # Only reachable through Caddy; also on localhost:3000 of this machine for debugging.
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     env_file: .env
     environment:
       CLAMAV_HOST: clamav
       CLAMAV_PORT: "3310"
+      TRUST_PROXY: ${TRUST_PROXY:-1}
     volumes:
       - app-data:/data
       - app-uploads:/uploads
@@ -28,10 +47,33 @@ services:
       - clamav-db:/var/lib/clamav
     networks: [scan, updates]
 
+  # Daily backups of the database + uploaded files into ./backups on this machine.
+  # Copy ./backups somewhere off this server too (see README).
+  backup:
+    build: .
+    restart: unless-stopped
+    user: "0:0"
+    command: ["node", "--no-warnings=ExperimentalWarning", "scripts/backup.js", "--loop"]
+    environment:
+      DATA_DIR: /data
+      UPLOAD_DIR: /uploads
+      BACKUP_DIR: /backups
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_INTERVAL_HOURS: "24"
+    volumes:
+      - app-data:/data
+      - app-uploads:/uploads:ro
+      - ./backups:/backups
+    network_mode: none
+    healthcheck:
+      disable: true
+
 volumes:
   app-data:
   app-uploads:
   clamav-db:
+  caddy-data:
+  caddy-config:
 
 networks:
   frontend:

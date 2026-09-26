@@ -1,0 +1,34 @@
+<%- include('partials/head') %>
+<div class="panel narrow wide-narrow">
+  <h1>Become a creator</h1>
+  <% if (user.role !== 'member') { %>
+    <p>Your account can already upload. <a class="btn btn-primary" href="/studio/upload">Upload a video</a></p>
+  <% } else if (application && application.status === 'pending') { %>
+    <div class="flash flash-info"><strong>Application under review.</strong> Sent <%= application.created_at.slice(0, 10) %>. You'll be able to upload as soon as it's approved.</div>
+  <% } else if (!open) { %>
+    <p>Creator applications are closed right now. Please check back later.</p>
+  <% } else { %>
+    <% if (application && application.status === 'rejected') { %>
+      <div class="flash flash-error"><strong>Your last application was not approved.</strong><% if (application.review_note) { %> Reason: <%= application.review_note %><% } %> You can apply again below.</div>
+    <% } %>
+    <p class="muted">To keep everyone on the site safe and legal, every creator verifies their identity once before uploading.
+      Your documents are virus-scanned, <strong>encrypted</strong>, and only visible to our compliance team. They are never shown publicly.</p>
+    <form method="post" enctype="multipart/form-data" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label>Full legal name <small class="muted">— exactly as on your ID</small><input name="legal_name" required minlength="3" maxlength="150" autocomplete="name"></label>
+      <div class="row">
+        <label>Date of birth <input type="date" name="date_of_birth" required autocomplete="bday"></label>
+        <label>Country <input name="country" required maxlength="60" autocomplete="country-name"></label>
+      </div>
+      <label>Stage name <small class="muted">— optional, any other names you perform under</small><input name="stage_name" maxlength="60"></label>
+      <label>Photo ID — front <small class="muted">— passport, driver's licence or national ID card</small><input type="file" name="id_front" accept="image/*,application/pdf" required></label>
+      <label>Photo ID — back <small class="muted">— optional, if your ID has one</small><input type="file" name="id_back" accept="image/*,application/pdf"></label>
+      <label>Selfie holding your ID next to your face <input type="file" name="selfie" accept="image/*" required></label>
+      <label class="check compliance"><input type="checkbox" name="agree" value="yes" required>
+        <span>I confirm this is my own ID, that I am 18 or older, and that for every video I upload I will only include people who were 18+ at the time of filming,
+        who consented to being filmed and published, and whose signed release and photo ID I will attach. I agree to the <a href="/terms" target="_blank">Terms</a>.</span></label>
+      <button class="btn btn-primary btn-lg">Submit application</button>
+    </form>
+  <% } %>
+</div>
+<%- include('partials/foot') %>

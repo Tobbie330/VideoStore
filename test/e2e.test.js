@@ -5,7 +5,6 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const os = require('node:os');
-const net = require('node:net');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
@@ -18,67 +17,9 @@ process.env.CLAMAV_HOST = '127.0.0.1';
 
 const FFMPEG = process.env.FFMPEG_PATH || 'ffmpeg';
 const FFPROBE = process.env.FFPROBE_PATH || 'ffprobe';
-const EICAR = 'X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*';
 
-// ---- fake clamd speaking the INSTREAM protocol ----
+const { startFakeClamd, client, EICAR } = require('./helpers');
 let clamd;
-function startFakeClamd() {
-  return new Promise((resolve) => {
-    clamd = net.createServer((sock) => {
-      let buf = Buffer.alloc(0);
-      let mode = null;
-      const chunks = [];
-      sock.on('data', (d) => {
-        buf = Buffer.concat([buf, d]);
-        if (!mode) {
-          const z = buf.indexOf(0);
-          if (z === -1) return;
-          mode = buf.subarray(0, z).toString();
-          buf = buf.subarray(z + 1);
-          if (mode === 'zPING') return sock.end('PONG\0');
-        }
-        while (buf.length >= 4) {
-          const len = buf.readUInt32BE(0);
-          if (len === 0) {
-            const body = Buffer.concat(chunks).toString('latin1');
-            return sock.end(body.includes(EICAR) ? 'stream: Eicar-Test-Signature FOUND\0' : 'stream: OK\0');
-          }
-          if (buf.length < 4 + len) return;
-          chunks.push(buf.subarray(4, 4 + len));
-          buf = buf.subarray(4 + len);
-        }
-      });
-    });
-    clamd.listen(0, '127.0.0.1', () => resolve(clamd.address().port));
-  });
-}
-
-// ---- tiny cookie-keeping HTTP client ----
-function client(base) {
-  let cookie = '';
-  let csrf = '';
-  async function req(method, url, { form, body, headers = {} } = {}) {
-    const h = { ...headers };
-    if (cookie) h.cookie = cookie;
-    let payload = body;
-    if (form) {
-      payload = new URLSearchParams({ _csrf: csrf, ...form });
-      h['content-type'] = 'application/x-www-form-urlencoded';
-    }
-    const res = await fetch(base + url, { method, headers: h, body: payload, redirect: 'manual' });
-    const set = res.headers.getSetCookie();
-    if (set.length) cookie = set.map((c) => c.split(';')[0]).join('; ');
-    const text = await res.text();
-    const m = text.match(/name="_csrf" value="([^"]+)"/) || text.match(/name="csrf" content="([^"]+)"/);
-    if (m) csrf = m[1];
-    return { status: res.status, location: res.headers.get('location'), text, headers: res.headers };
-  }
-  async function enter() {
-    await req('GET', '/age-check');
-    await req('POST', '/age-check', { form: { confirm: 'yes' } });
-  }
-  return { req, enter, get csrf() { return csrf; } };
-}
 
 function probeTags(file) {
   const out = JSON.parse(execFileSync(FFPROBE, ['-v', 'error', '-print_format', 'json', '-show_format', '-show_streams', '-show_chapters', file]));
@@ -92,7 +33,8 @@ let pipeline;
 let db;
 
 before(async () => {
-  process.env.CLAMAV_PORT = String(await startFakeClamd());
+  clamd = await startFakeClamd();
+  process.env.CLAMAV_PORT = String(clamd.address().port);
   app = require('../server');
   pipeline = require('../src/pipeline');
   db = require('../src/db').db;
@@ -118,7 +60,7 @@ after(() => {
 async function upload(c, file, fields) {
   const fd = new FormData();
   fd.set('_csrf', c.csrf);
-  for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+  for (const [k, v] of Object.entries({ performers: 'solo', ...fields })) fd.set(k, v);
   fd.set('video', new Blob([fs.readFileSync(file)], { type: 'video/mp4' }), path.basename(file));
   return c.req('POST', '/studio/upload', { body: fd, headers: { accept: 'application/json' } });
 }

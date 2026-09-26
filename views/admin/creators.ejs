@@ -1,0 +1,21 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<h1>Creator applications</h1>
+<div class="tabs">
+  <% ['pending','approved','rejected'].forEach(function (s) { %><a class="<%= status === s ? 'active' : '' %>" href="?status=<%= s %>"><%= s %></a><% }) %>
+</div>
+<table class="table">
+  <tr><th>Legal name</th><th>Account</th><th>Date of birth</th><th>Country</th><th>Sent</th><th></th></tr>
+  <% applications.forEach(function (a) { %>
+  <tr>
+    <td><strong><%= a.legal_name %></strong><% if (a.stage_name) { %><div class="muted small">aka <%= a.stage_name %></div><% } %></td>
+    <td><%= a.username %><div class="muted small"><%= a.email %></div></td>
+    <td><%= a.date_of_birth %></td>
+    <td><%= a.country %></td>
+    <td class="small"><%= a.created_at %></td>
+    <td><a class="btn btn-sm btn-primary" href="/admin/creators/<%= a.id %>"><%= status === 'pending' ? 'Review' : 'View' %></a></td>
+  </tr>
+  <% }) %>
+</table>
+<% if (!applications.length) { %><p class="empty">Nothing here.</p><% } %>
+<%- include('../partials/foot') %>

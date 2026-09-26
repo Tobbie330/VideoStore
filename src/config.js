@@ -16,6 +16,9 @@ module.exports = {
   videoDir: path.join(uploadDir, 'videos'),
   thumbDir: path.join(uploadDir, 'thumbs'),
   adDir: path.join(uploadDir, 'ads'),
+  // Encrypted ID documents and release forms (never served publicly).
+  privateDir: path.join(uploadDir, 'private'),
+  docsKey: process.env.DOCS_ENCRYPTION_KEY || '',
   maxUploadBytes: Number(process.env.MAX_UPLOAD_MB || 4000) * 1024 * 1024,
   adminEmail: process.env.ADMIN_EMAIL || 'admin@example.com',
   adminPassword: process.env.ADMIN_PASSWORD || 'changeme123',
@@ -29,5 +32,12 @@ module.exports = {
   // Only "demo" exists today: premium is granted instantly with no charge.
   // A real processor (CCBill, Segpay, Verotel...) plugs into src/routes/billing.js.
   paymentMode: process.env.PAYMENT_MODE || 'demo',
-  trustProxy: process.env.TRUST_PROXY === '1',
+  // Number of reverse proxies in front of the app (0 = none).
+  trustProxy: Math.max(0, Number(process.env.TRUST_PROXY || 0) || 0),
+  // Visitor location headers set by your CDN/proxy (defaults are Cloudflare's).
+  // Only read when TRUST_PROXY=1, since clients could otherwise fake them.
+  geoCountryHeader: (process.env.GEO_COUNTRY_HEADER || 'cf-ipcountry').toLowerCase(),
+  geoRegionHeader: (process.env.GEO_REGION_HEADER || 'cf-region-code').toLowerCase(),
+  // Header with the real visitor IP when behind a CDN (e.g. cf-connecting-ip).
+  clientIpHeader: (process.env.CLIENT_IP_HEADER || '').toLowerCase(),
 };

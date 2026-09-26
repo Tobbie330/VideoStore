@@ -2,6 +2,7 @@
 const crypto = require('node:crypto');
 const session = require('express-session');
 const { db, getSettings } = require('./db');
+const config = require('./config');
 
 class SqliteStore extends session.Store {
   get(sid, cb) {
@@ -79,6 +80,30 @@ function ageGate(req, res, next) {
   res.redirect('/age-check');
 }
 
+// Where the visitor is, from headers your CDN/proxy adds (Cloudflare by default).
+// Returns e.g. { country: 'US', region: 'US-TX' }; nulls when unknown.
+function visitorLocation(req) {
+  if (!config.trustProxy) return { country: null, region: null };
+  const country = String(req.get(config.geoCountryHeader) || '').trim().toUpperCase();
+  const sub = String(req.get(config.geoRegionHeader) || '').trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(country)) return { country: null, region: null };
+  return { country, region: /^[A-Z0-9]{1,3}$/.test(sub) ? `${country}-${sub}` : null };
+}
+
+// Blocks countries/states listed in Admin → Settings (e.g. places that require
+// ID-based age verification when no verification provider is set up).
+function regionBlock(req, res, next) {
+  const list = String(res.locals.settings.blocked_regions || '').split(/[\s,]+/).filter(Boolean);
+  if (!list.length) return next();
+  const { country, region } = visitorLocation(req);
+  const hit = (country && list.includes(country)) || (region && list.includes(region));
+  if (!hit) return next();
+  const always = ['/terms', '/privacy', '/2257', '/dmca', '/healthz', '/age-check', '/login', '/logout'];
+  if (always.includes(req.path) || req.path.startsWith('/static/') || (req.user && req.user.role === 'admin')) return next();
+  if (req.path.startsWith('/admin')) return next(); // requireRole still applies; lets admins log in and reach the panel
+  res.status(451).render('blocked', { title: 'Not available in your region', where: region || country });
+}
+
 function requireLogin(req, res, next) {
   if (req.user) return next();
   req.session.returnTo = req.originalUrl;
@@ -94,4 +119,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { SqliteStore, loadUser, flash, csrfCheck, ageGate, requireLogin, requireRole, isSubscriber };
+module.exports = { SqliteStore, loadUser, flash, csrfCheck, ageGate, regionBlock, visitorLocation, requireLogin, requireRole, isSubscriber };

@@ -6,6 +6,7 @@ const config = require('../config');
 const { db, slugify, transaction } = require('../db');
 const V = require('../videos');
 const pipeline = require('../pipeline');
+const privateDocs = require('../privateDocs');
 const { upload, receive, discard } = require('../uploads');
 const { flash, requireRole } = require('../middleware');
 
@@ -49,12 +50,21 @@ function readForm(body) {
   return { errors, title, description, categoryId, access, tags };
 }
 
-router.post('/upload', receive(upload.fields([{ name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }])), (req, res) => {
+const MAX_DOC_BYTES = 25 * 1024 * 1024;
+
+router.post('/upload', receive(upload.fields([
+  { name: 'video', maxCount: 1 }, { name: 'thumbnail', maxCount: 1 }, { name: 'releases', maxCount: 10 },
+])), (req, res) => {
   const wantsJson = (req.get('accept') || '').includes('application/json');
   const form = readForm(req.body);
   const video = req.files && req.files.video && req.files.video[0];
   const thumb = req.files && req.files.thumbnail && req.files.thumbnail[0];
+  const releases = (req.files && req.files.releases) || [];
+  const performers = req.body.performers === 'releases' ? 'releases' : req.body.performers === 'solo' ? 'solo' : null;
   if (!video) form.errors.push('Choose a video file.');
+  if (!performers) form.errors.push('Say who appears in the video.');
+  if (performers === 'releases' && !releases.length) form.errors.push('Attach the signed release form and photo ID for every other person in the video.');
+  if (releases.some((f) => f.size > MAX_DOC_BYTES)) form.errors.push('Each release form or ID must be under 25 MB.');
   if (req.body.compliance !== 'yes') form.errors.push('You must confirm the compliance statement.');
   if (form.errors.length) {
     discard(req);
@@ -63,12 +73,17 @@ router.post('/upload', receive(upload.fields([{ name: 'video', maxCount: 1 }, { 
     return res.redirect('/studio/upload');
   }
   const id = transaction(() => {
-    const r = db.prepare(`INSERT INTO videos (user_id, category_id, title, slug, description, access, status, status_detail, quarantine_file, quarantine_thumb)
-        VALUES (?, ?, ?, ?, ?, ?, 'processing', 'Queued for virus scan', ?, ?)`)
-      .run(req.user.id, form.categoryId, form.title, slugify(form.title), form.description, form.access,
+    const r = db.prepare(`INSERT INTO videos (user_id, category_id, title, slug, description, access, performers, status, status_detail, quarantine_file, quarantine_thumb)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'processing', 'Queued for virus scan', ?, ?)`)
+      .run(req.user.id, form.categoryId, form.title, slugify(form.title), form.description, form.access, performers,
         path.basename(video.path), thumb ? path.basename(thumb.path) : null);
     const vid = Number(r.lastInsertRowid);
     V.setTags(vid, form.tags);
+    if (performers === 'releases') {
+      for (const f of releases) privateDocs.addQuarantined(f, { userId: req.user.id, videoId: vid, videoTitle: form.title, kind: 'release' });
+    } else {
+      for (const f of releases) fs.rm(f.path, { force: true }, () => {});
+    }
     return vid;
   });
   pipeline.kick();

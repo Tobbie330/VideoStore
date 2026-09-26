@@ -4,3 +4,4 @@ uploads
 .git
 .env
 test
+backups

@@ -1,5 +1,8 @@
 <%- include('_page') %>
 <h1>18 U.S.C. 2257 Record-Keeping Requirements Compliance Statement</h1>
 <p>All models, actors, actresses and other persons appearing in any visual depiction of actual sexually explicit conduct on this website were over the age of eighteen (18) years at the time of the creation of such depictions.</p>
-<p>Records required under 18 U.S.C. 2257 and 28 C.F.R. 75 for content produced by uploaders are kept by the respective producers. Custodian of records: <em>[Name, address — fill in before launch]</em>.</p>
+<p>Records required under 18 U.S.C. 2257 and 28 C.F.R. 75 are kept by the custodian of records:</p>
+<p><strong><%= settings.custodian_name || '[Custodian name — set in Admin → Settings]' %></strong><br>
+<%- (settings.custodian_address ? settings.custodian_address.replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }).replace(/\n/g, '<br>') : '[Custodian address — set in Admin → Settings]') %></p>
+<p>Operated by <%= biz %><% if (settings.business_address) { %>, <%= settings.business_address %><% } %>.</p>
 <%- include('_end') %>

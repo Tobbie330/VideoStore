@@ -48,6 +48,16 @@
     sync();
   });
 
+  // ---- show the release-form picker only when other people appear ----
+  var relField = document.querySelector('.releases-field');
+  document.querySelectorAll('input[name=performers]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var needs = r.value === 'releases' && r.checked;
+      relField.hidden = !needs;
+      relField.querySelector('input').required = needs;
+    });
+  });
+
   // ---- drag & drop + upload progress ----
   var form = document.getElementById('upload-form');
   if (!form) return;

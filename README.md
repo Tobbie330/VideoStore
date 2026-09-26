@@ -4,16 +4,27 @@ An adult video site with free and premium (subscription) videos, partner ad slot
 
 ## Running it with Docker
 
+1. Point your domain's DNS at the server and open ports 80 and 443.
+2. Configure and start:
+
 ```bash
-cp .env.example .env        # then edit: set SESSION_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD
+cp .env.example .env        # set DOMAIN, SESSION_SECRET, DOCS_ENCRYPTION_KEY, ADMIN_EMAIL, ADMIN_PASSWORD
 docker compose up -d --build
 ```
 
-Open http://your-server:3000 and log in with the admin email and password from `.env`. Change the password under **My account** afterwards.
+3. Open `https://your-domain` and log in with the admin email and password from `.env`. Change the password under **My account**.
+4. In **Admin → Settings**, fill in your business details and the 2257 custodian of records.
 
-On the first start the ClamAV container downloads about 300 MB of virus definitions, which takes a few minutes. Uploads made during that time wait safely in quarantine and are processed once the scanner is up. The admin dashboard shows whether the scanner is online.
+The stack has four containers:
 
-For a public launch, put the app behind HTTPS (Caddy, nginx or Cloudflare Tunnel) and set `TRUST_PROXY=1`.
+| Container | Job |
+|---|---|
+| `caddy` | HTTPS. Gets and renews a free Let's Encrypt certificate for `DOMAIN` automatically. |
+| `app` | The website. Only reachable through Caddy (plus `127.0.0.1:3000` on the server itself). |
+| `clamav` | Virus scanner. The first start downloads about 300 MB of definitions and takes a few minutes. Uploads wait in quarantine until it's ready. |
+| `backup` | Daily backup into `./backups` on the server (see below). |
+
+**Keep a copy of `DOCS_ENCRYPTION_KEY` somewhere safe**, for example a password manager. Without it the creators' ID documents and release forms can't be opened, and you are legally required to keep them.
 
 ## What happens to an upload
 
@@ -36,11 +47,42 @@ browser ──upload──▶ quarantine folder (never served)
               4. thumbnail: an uploaded thumbnail is scanned and re-encoded (EXIF removed),
                  or one is taken from the video automatically
                         ▼
-              5. published → "Awaiting review" (admin approves), or live immediately
-                 if auto-approve is on or an admin uploaded it
+              5. "Awaiting review": an admin watches it on the review page, next to the
+                 uploader's verified ID and any release forms, then approves or rejects it
+                 (an admin's own uploads go live directly)
 ```
 
-If the scanner is unreachable, nothing is published. The upload stays in quarantine and is retried with backoff. Partner ad images go through the same scan and metadata strip.
+If the scanner is unreachable, nothing is published. The upload stays in quarantine and is retried with backoff. Partner ad images go through the same scan and metadata strip. Release forms attached to an upload are scanned and encrypted before the video is processed.
+
+## Creator verification (2257 records)
+
+1. A member clicks **Become a creator** and submits their legal name, date of birth, a photo of their ID, and a selfie holding the ID. Under-18 dates of birth are refused.
+2. The files are virus-scanned and **encrypted** (AES-256-GCM) before being stored. They are never public; admins open them in **Admin → Creators**. They aren't cached, and they are only decrypted when an admin views them.
+3. An admin works through the checklist, ticks it and approves. The account becomes a creator.
+4. Every upload must say either **Only me** or **Me and/or other people**. The second option requires a signed release form and photo ID for each other person.
+5. Deleting a video keeps its release forms, because records must be kept after content is removed.
+
+Admins can still make someone a creator directly in **Admin → Users**, but the site warns first if that person hasn't verified their ID.
+
+## Age-verification laws and region blocking
+
+Several US states, the UK and France require real ID-based age verification for adult sites. Until you sign up with an age-verification provider, you can block those places in **Admin → Settings → Blocked regions**. Codes can be a country (`GB`, `FR`) or a US state (`US-TX`). Visitors from a blocked place see a "not available in your region" page; admins can still log in.
+
+This needs Cloudflare in front of the site with **Rules → Settings → "Add visitor location headers"** turned on. Also set `CLIENT_IP_HEADER=cf-connecting-ip` in `.env`. Which places to block is a legal question; ask your lawyer, because these laws change often.
+
+## Backups
+
+The `backup` container runs every 24 hours:
+- `./backups/db/`: a consistent snapshot of the database. The newest 14 are kept (`BACKUP_KEEP`).
+- `./backups/files/`: a mirror of the videos, thumbnails, ad images and encrypted documents.
+
+Test it once with `docker compose run --rm backup node scripts/backup.js`. Then **copy `./backups` off the server regularly**, for example with `rclone` to Backblaze B2 or S3. A backup on the same disk won't survive losing that disk.
+
+To restore: stop the app, then copy a `db/videostore-*.db` snapshot over `/data/videostore.db` in the `app-data` volume, and `files/*` back into the `app-uploads` volume.
+
+## Legal pages
+
+Terms, Privacy, 2257 and DMCA start as templates filled in with the business details from Settings. Once a lawyer has written the real text, paste it into **Admin → Legal pages**. A blank line starts a new paragraph and `## ` starts a heading.
 
 ## Features
 
@@ -49,8 +91,8 @@ If the scanner is unreachable, nothing is published. The upload stays in quarant
 - **Subscriptions:** plans are editable in Admin → Settings. Premium members see no ads (a setting you can turn off).
 - **Partner ads:** five slots (header, sidebar, in the video grid, below the player, footer). You can use image banners with a click-through link, or paste an ad network's embed code; embed code runs in a sandboxed frame so it can't read your users' logins. Each ad has a weight for rotation, start and end dates, and impression and click counts. There's a per-partner report showing impressions, clicks and click-through rate.
 - **Upload studio:** drag-and-drop with a progress bar, tag chips with popular-tag suggestions, a Free/Premium picker, an optional custom thumbnail, and live processing status.
-- **Admin:** a moderation queue (approve, reject, feature, switch free/premium), user reports with one-click takedown, categories, ads, users (change roles, grant or revoke premium, ban) and site settings.
-- **Adult-site basics:** an 18+ age gate, the RTA label (so parental filters can block the site), an 18+ consent and records statement required on every upload, a report button on every video, and template Terms, Privacy, 2257 and DMCA pages. **Have a lawyer replace these templates.**
+- **Admin:** a review queue with a side-by-side review page, creator ID verification, user reports with one-click takedown, categories, ads, users (change roles, grant or revoke premium, ban), settings and editable legal pages.
+- **Adult-site basics:** an 18+ age gate, the RTA label (so parental filters can block the site), region blocking, creator ID verification, release forms for co-performers, a report button on every video, and editable Terms, Privacy, 2257 and DMCA pages.
 
 ## Payments
 
@@ -63,29 +105,33 @@ Mainstream processors (Stripe, PayPal, Square) don't allow adult content. Apply 
 | Role | Can |
 |---|---|
 | member | watch free videos, subscribe, like, report |
-| creator | also upload and manage their own videos (My studio) |
+| creator | also upload and manage their own videos (My studio); needs an approved ID check |
 | admin | everything, and always has premium access |
 
-New sign-ups are members. Promote creators in Admin → Users, or turn on "Let anyone sign up as a creator" in Settings.
+New sign-ups are members. They become creators by applying through **Become a creator**.
 
 ## Configuration (`.env`)
 
 | Variable | Default | |
 |---|---|---|
-| `SESSION_SECRET` | — | **required** in production |
+| `DOMAIN` | localhost | your domain; Caddy gets its HTTPS certificate |
+| `SESSION_SECRET` | — | **required** in production (`openssl rand -hex 32`) |
+| `DOCS_ENCRYPTION_KEY` | — | **required** in production (`openssl rand -hex 32`); keep a copy safe |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | admin@example.com / changeme123 | first admin account, created once |
 | `MAX_UPLOAD_MB` | 4000 | keep at or below the limits in `docker/clamd.conf` |
-| `TRUST_PROXY` | 0 | set to 1 behind an HTTPS reverse proxy |
+| `TRUST_PROXY` | 1 in docker-compose | number of proxies in front of the app (Caddy = 1) |
+| `CLIENT_IP_HEADER` | — | `cf-connecting-ip` when behind Cloudflare |
+| `BACKUP_KEEP` | 14 | database snapshots to keep |
 | `PAYMENT_MODE` | demo | |
 
-Data lives in two Docker volumes: `app-data` (SQLite database) and `app-uploads` (videos, thumbnails, ad images). Back them up.
+Data lives in two Docker volumes: `app-data` (SQLite database) and `app-uploads` (videos, thumbnails, ad images, encrypted documents).
 
 ## Development
 
 ```bash
 npm install
 npm run dev          # needs ffmpeg + ffprobe on PATH, and clamd on 127.0.0.1:3310
-npm test             # end-to-end test with a fake scanner (needs ffmpeg/ffprobe)
+npm test             # end-to-end tests with a fake scanner (needs ffmpeg/ffprobe)
 ```
 
 Requires Node 22.13+ (it uses the built-in `node:sqlite`).

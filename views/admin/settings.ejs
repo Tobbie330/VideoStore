@@ -5,8 +5,28 @@
   <input type="hidden" name="_csrf" value="<%= csrf %>">
   <label>Site name <input name="site_name" value="<%= settings.site_name %>" required></label>
   <label class="check"><input type="checkbox" name="hide_ads_for_subscribers" value="yes" <%= settings.hide_ads_for_subscribers === '1' ? 'checked' : '' %>> Hide ads for premium subscribers</label>
-  <label class="check"><input type="checkbox" name="auto_approve" value="yes" <%= settings.auto_approve === '1' ? 'checked' : '' %>> Publish uploads automatically after the virus scan (skip manual review — not recommended)</label>
-  <label class="check"><input type="checkbox" name="open_creator_signup" value="yes" <%= settings.open_creator_signup === '1' ? 'checked' : '' %>> Let anyone sign up as a creator (otherwise promote users in Users)</label>
+  <label class="check"><input type="checkbox" name="creator_applications_open" value="yes" <%= settings.creator_applications_open === '1' ? 'checked' : '' %>> Accept new creator applications (ID-verified)</label>
+  <p class="muted small">Every upload from a creator waits in the review queue until an admin approves it.</p>
+
+  <h2>Business details <small class="muted">— shown on the legal pages</small></h2>
+  <div class="row">
+    <label>Legal business name <input name="business_name" value="<%= settings.business_name %>" placeholder="Your Company LLC"></label>
+    <label>Contact / abuse email <input name="contact_email" type="email" value="<%= settings.contact_email %>" placeholder="support@yourdomain.com"></label>
+  </div>
+  <label>Business address <input name="business_address" value="<%= settings.business_address %>"></label>
+  <div class="row">
+    <label>2257 custodian of records — name <input name="custodian_name" value="<%= settings.custodian_name %>"></label>
+    <label>Custodian address <textarea name="custodian_address" rows="2"><%= settings.custodian_address %></textarea></label>
+  </div>
+
+  <h2>Blocked regions <small class="muted">— for places that require ID-based age checks</small></h2>
+  <label>Countries or US states to block
+    <input name="blocked_regions" value="<%= settings.blocked_regions %>" placeholder="e.g. US-TX, US-UT, GB">
+    <small class="muted">Comma-separated codes: a country (<code>GB</code>, <code>FR</code>) or a country-state (<code>US-TX</code>).
+      Visitors from these places see a "not available in your region" page. Needs Cloudflare in front of the site with
+      "Add visitor location headers" turned on, and <code>TRUST_PROXY=1</code>.
+      <% if (!locals.geoActive) { %><strong class="warn">Location headers are not being read right now (TRUST_PROXY is off), so nobody is blocked.</strong><% } %></small>
+  </label>
   <button class="btn btn-primary">Save settings</button>
 </form>
 

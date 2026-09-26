@@ -1,0 +1,41 @@
+<%- include('../partials/head') %>
+<%- include('_nav') %>
+<p><a href="/admin/creators">← Creator applications</a></p>
+<h1><%= application.legal_name %> <span class="badge"><%= application.status %></span></h1>
+<%
+  var dob = new Date(application.date_of_birth + 'T00:00:00Z'), now = new Date();
+  var age = now.getUTCFullYear() - dob.getUTCFullYear() - ((now.getUTCMonth() < dob.getUTCMonth() || (now.getUTCMonth() === dob.getUTCMonth() && now.getUTCDate() < dob.getUTCDate())) ? 1 : 0);
+%>
+<dl class="kv">
+  <dt>Account</dt><dd><%= application.username %> (<%= application.email %>) · role: <%= application.role %></dd>
+  <dt>Date of birth</dt><dd><%= application.date_of_birth %> · <span class="<%= age >= 18 ? 'ok' : 'warn' %>">age <%= age %></span></dd>
+  <dt>Country</dt><dd><%= application.country %></dd>
+  <dt>Stage name</dt><dd><%= application.stage_name || '—' %></dd>
+  <dt>Submitted</dt><dd><%= application.created_at %></dd>
+  <% if (application.reviewed_at) { %><dt>Reviewed</dt><dd><%= application.reviewed_at %> by <%= application.reviewer || '—' %><% if (application.review_note) { %> — “<%= application.review_note %>”<% } %></dd><% } %>
+</dl>
+<h2>Identity documents</h2>
+<%- include('_docs', { docs: docs }) %>
+<div class="panel">
+  <h2 style="margin-top:0">Checklist</h2>
+  <ul class="muted">
+    <li>The name and date of birth on the ID match what they typed.</li>
+    <li>The ID is government-issued, not expired, and shows no signs of editing.</li>
+    <li>The face in the selfie matches the ID photo, and they're holding that same ID.</li>
+    <li>They are 18 or older today.</li>
+  </ul>
+  <% if (application.status === 'pending') { %>
+  <form method="post" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label>Note (shown to the applicant if rejected) <input name="note" maxlength="500"></label>
+    <label class="check"><input type="checkbox" name="checked" value="yes"> I checked every item above</label>
+    <div class="actions">
+      <button class="btn btn-primary" name="action" value="approve">Approve — allow uploads</button>
+      <button class="btn btn-danger" name="action" value="reject">Reject</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+<h2>Release forms from this creator's uploads</h2>
+<%- include('_docs', { docs: releases }) %>
+<%- include('../partials/foot') %>
